@@ -1,0 +1,46 @@
+#Define the geneset
+ECM_up <- c(# Structural ECM (mostly up)
+    "ACAN","COL1A1","COL3A1","VCAN","COMP","FN1","TNC","SPP1", # Remodeling / stabilization (up)
+    "TIMP1","TIMP2","TIMP3","P4HA2","CTHRC1")
+
+# Calculate the ModuleScore
+Fib.Clean <- AddModuleScore(
+    Fib.Clean,
+    features = list(ECM_up),
+    name     = "ECM_up",
+    nbin     = 6,
+    ctrl     = 40,
+    replace  = TRUE
+)
+
+#Plot
+ggplot(
+    transform(
+        Fib.Clean@meta.data,
+        donor = factor(donor, levels = c("Normal Skin","KD1","KD2","KD3")),
+        ECM_up_mean = Matrix::colMeans(
+            GetAssayData(Fib.Clean, slot = "data")[intersect(
+                c("ACAN","COL1A1","COL3A1","VCAN","COMP","FN1","TNC","SPP1",
+                  "TIMP1","TIMP2","TIMP3","P4HA2","CTHRC1"),#Adjust if needed
+                rownames(Fib.Clean)
+            ), , drop = FALSE]
+        )
+    ),
+    aes(x = donor, y = ECM_up_mean, fill = donor)
+) +
+    geom_violin(trim = TRUE) +
+    stat_summary(fun = mean, geom = "point", size = 3, color = "black") +
+    stat_compare_means(
+        comparisons = list(
+            c("Normal Skin","KD1"),
+            c("Normal Skin","KD2"),
+            c("Normal Skin","KD3")
+        ),
+        method = "wilcox.test",
+        label = "p.signif"
+    ) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "none") +
+    labs(title = "ECM_up", x = NULL, y = "ECM module score") #Adjust if needed
+ggsave(".//ECM_up module.pdf", width =6, height =16)
